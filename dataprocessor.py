@@ -1,7 +1,9 @@
 """Imports data from Alpaca, calculates indicators and saves to file.
 
-All data for a list of specified symbols are imported and processed for a given time period. Data for all symbols are combined to one Pandas DataFrame and saved to a .Feather file. A file is created for each month.
-Another file specifying the start and end indices of each symbol is created. The user can select the timeframe of the bars.
+All data for a list of specified symbols are imported and processed for a given time period.
+Data for all symbols are combined to one Pandas DataFrame and saved to a .Feather file. A file
+is created for each month. Another file specifying the start and end indices of each symbol is
+created. The user can select the timeframe of the bars.
 """
 
 __author__ = 'Dante St. Prix'
@@ -23,9 +25,21 @@ import math
 import csv
 from typing import Tuple, Union, Type, Dict, List, Set
 
-API_KEY = <Insert API key here>
-SECRET_KEY = <Insert secret key here>
-FILEPATH = <Insert location to save files to here>
+API_KEY = < Insert
+API
+key
+here >
+SECRET_KEY = < Insert
+secret
+key
+here >
+FILEPATH = < Insert
+location
+to
+save
+files
+to
+here >
 HEADERS = {'APCA-API-KEY-ID': API_KEY, 'APCA-API-SECRET-KEY': SECRET_KEY}
 MARKET_DATA_BASE = 'https://data.alpaca.markets/'
 UTC_ZONE = tz.gettz('UTC')
@@ -1214,7 +1228,7 @@ def save_month(month_data: Dict[str, Dict[str, Union[List[str], np.ndarray]]], m
     main_filename = '{}_{}_{}.feather'.format(month[:4], month[5:7], timeframe)
     index_filename = '{}_{}_{}_indices.feather'.format(month[:4], month[5:7], timeframe)
     data_filepath = FILEPATH + '\\' + main_filename
-    index_filepath =  FILEPATH + '\\' + index_filename
+    index_filepath = FILEPATH + '\\' + index_filename
     month_df.to_feather(data_filepath)
     index_df.to_feather(index_filepath)
 
