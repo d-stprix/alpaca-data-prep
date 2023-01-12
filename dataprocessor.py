@@ -25,21 +25,9 @@ import math
 import csv
 from typing import Tuple, Union, Type, Dict, List, Set
 
-API_KEY = < Insert
-API
-key
-here >
-SECRET_KEY = < Insert
-secret
-key
-here >
-FILEPATH = < Insert
-location
-to
-save
-files
-to
-here >
+API_KEY = < Insert API key here >
+SECRET_KEY = < Insert secret key here >
+FILEPATH = < Insert location to save files to here >
 HEADERS = {'APCA-API-KEY-ID': API_KEY, 'APCA-API-SECRET-KEY': SECRET_KEY}
 MARKET_DATA_BASE = 'https://data.alpaca.markets/'
 UTC_ZONE = tz.gettz('UTC')
