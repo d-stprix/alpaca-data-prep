@@ -6,7 +6,7 @@ You can retrieve years of historical data for over 6000 symbols with one click o
 - dataprocessor.py: Imports data and calculates indicators before saving to two .Feather files. 
 - One file contains data for all symbols for one month. The other file contains the start and end indices of each symbol in the first file.
 - Each month has a separate set of .Feather files. 
-- candlesticks.py: Produces candlestick data including functionality for adding technical indicators.
+- candlesticks.py: Produces candlestick plots including functionality for adding technical indicators.
 
 **Be sure to check out the Wiki for implementation and performance details!**
 
