@@ -49,7 +49,7 @@ end_index = index_file['end'][aapl_index]
 ```
 aapl_dict = {header: data_file[header][start_index:end_index].to_numpy() for header in data_file.columns}
 ```
-4) Use dictionary key from tables below to access Numpy array for each query:
+4) Use dictionary keys from tables below to access Numpy array for each query:
 ```
 close_price = aapl_dict['close']
 open_price = aapl_dict['open']
