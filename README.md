@@ -8,6 +8,8 @@ You can retrieve years of historical data for over 6000 symbols with one click o
 - Each month has a separate set of .Feather files. 
 - candlesticks.py: Produces candlestick data including functionality for adding technical indicators.
 
+**Be sure to refer to the Wiki for implementation and performance details!**
+
 ![Opener](img/Banner2.JPG)
 
 ## Getting Started
