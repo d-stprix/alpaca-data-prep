@@ -8,7 +8,7 @@ You can retrieve years of historical data for over 6000 symbols with one click o
 - Each month has a separate set of .Feather files. 
 - candlesticks.py: Produces candlestick data including functionality for adding technical indicators.
 
-**Be sure to refer to the Wiki for implementation and performance details!**
+**Be sure to check out the Wiki for implementation and performance details!**
 
 ![Opener](img/Banner2.JPG)
 
@@ -45,7 +45,7 @@ aapl_index = np.where(index_file['symbol'] == 'AAPL')[0][0]
 start_index = index_file['start'][aapl_index]
 end_index = index_file['end'][aapl_index]
 ```
- 3) Put symbol data in a dictionary:
+ 3) Put symbol data in a dictionary (AAPL example):
 ```
 aapl_dict = {header: data_file[header][start_index:end_index].to_numpy() for header in data_file.columns}
 ```
@@ -68,10 +68,14 @@ ema_20 = aapl_dict['20 EMA']
 |Timestamp 1*| 'time'|
 |Timestamp 2**| 'integer time'|
 
-\* Timestamp as a datetime.datetime object \
-\** Integer representation of timestamp - YYYYMMddHHmm (no hyphens or colons)
+\* Timestamp represented as a datetime.datetime object. \
+\** Integer representation of timestamp - YYYYMMddHHmm (no hyphens or colons).
 
 **Indicators calculated with associated dictionary key:**
+
+<table>
+<tr><th> Continuous Indicators </th><th> Candlestick Patterns </th></tr>
+<tr><td>
 
 | Indicator | Dictionary Key |
 |-----------|----|
@@ -86,7 +90,13 @@ ema_20 = aapl_dict['20 EMA']
 |Bollinger Band (upper)| 'Bollinger (Upper)'|
 |Bollinger Band (lower)| 'Bollinger (Lower)'|
 |Consecutives*| 'Consecutives'|
-|Hammer**| 'Hammer'|
+
+
+</td><td>
+
+| Indicator | Dictionary Key |
+|-----------|----|
+|Hammer| 'Hammer'|
 |Shooting Star| 'Shooting Star'|
 |Spinning Top| 'Spinning Top'|
 |Green Marubozu| 'Green Marubozu'|
@@ -98,8 +108,9 @@ ema_20 = aapl_dict['20 EMA']
 |Tweezer Top| 'Tweezer Top'|
 |Tweezer Bottom| 'Tweezer Bottom'|
 
-\* Number of consecutive candles of the same color (positive and negative values for bullish and bearish candles respectively)
-\** All indicators after this point represent candlestick patterns. Represented using a boolean array. For multi-candle patterns, set to true for candles where they complete.
+</td></tr> </table>
+
+\* Number of consecutive candles of the same color (positive and negative values for bullish and bearish candles respectively) 
 
 **Plotting candlestick charts with candlesticks.py:**
 
@@ -118,3 +129,17 @@ Plots one day of data. Candlesticks containing prices and volume bars are automa
 |------|-----|--------|
 |plot_EMA(n)| plot_RSI()| plot_MACD()|
 |plot_VWAP()| plot_bollinger()| plot_pattern()|
+
+## Example Candlestick Plots
+
+**Typical plot with EMA and MACD displayed (5 min timeframe)**
+![opener](img/EMA%20MACD.JPG)
+
+**Trade made by a hypothetical guru (5 min timeframe)**
+![opener](img/Example%20Trade.JPG)
+
+**Plot showing candlestick patterns (2 min timeframe)**
+![opener](img/Candlesticks.JPG)
+
+**Plot showing the VWAP and Bollinger Bands (5 min timeframe)**
+![opener](img/VWAP%20Bollinger%20RSI.JPG)
