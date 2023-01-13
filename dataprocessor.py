@@ -1184,8 +1184,8 @@ def save_month(month_data: Dict[str, Dict[str, Union[List[str], np.ndarray]]], m
         """
         index_df = pd.DataFrame()
         index_df['symbol'] = np.asarray(list(month_data))
-        index_df['start'] = np.asarray(symbol_indices[0], dtype=np.uint16)
-        index_df['end'] = np.asarray(symbol_indices[1], dtype=np.uint16)
+        index_df['start'] = np.asarray(symbol_indices[0], dtype=np.uint32)
+        index_df['end'] = np.asarray(symbol_indices[1], dtype=np.uint32)
         return index_df
 
     def create_month_df(complete_data: Dict[str, np.ndarray]) -> pd.DataFrame:
