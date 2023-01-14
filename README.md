@@ -132,14 +132,21 @@ Plots one day of data. Candlesticks containing prices and volume bars are automa
 
 ## Example Candlestick Plots
 
-**Typical plot with EMA and MACD displayed (5 min timeframe)**
+**Typical Plot with EMA and MACD Displayed (5 min timeframe)**
 ![opener](img/EMA%20MACD.JPG)
 
-**Trade made by a hypothetical guru (5 min timeframe)**
+**Trade Made by a Hypothetical Guru (5 min timeframe)**
 ![opener](img/Example%20Trade.JPG)
 
-**Plot showing candlestick patterns (2 min timeframe)**
+**Plot Showing Candlestick Patterns (2 min timeframe)**
 ![opener](img/Candlesticks.JPG)
 
-**Plot showing the VWAP and Bollinger Bands (5 min timeframe)**
+**Plot Showing the VWAP and Bollinger Bands (5 min timeframe)**
 ![opener](img/VWAP%20Bollinger%20RSI.JPG)
+
+**Tweezer Bottom Strategy Backtest Example (5 min timeframe)**
+
+This strategy involves placing a buy order slightly above the high of the 11:05 candle (second candle of a tweezer bottom pattern) for stocks in an uptrend (according to the daily chart). The trade gets executed at 11:50 and the position is closed at 14:30. The stoploss is updated every time a multiple of the risk is reached (green lines). When considering other trades, it is likely that this strategy will be more profitable with a lower exit target.
+
+Note: This graph looks slightly different since it was made with an older version of this module which included an extra graph for daily candles. This functionality will be added in later revisions.
+![opener](img/RealExampleTrade.JPG)
