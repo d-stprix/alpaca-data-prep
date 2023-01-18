@@ -381,13 +381,16 @@ class IndicatorCalculator:
     def calc_gap_percent(self) -> np.ndarray:
         """Calculates the percentage change in price since the close of the previous trading day.
 
+        The backtester has access to the previous day's bar. The exception is made here since this
+        data is based on the open price of the day, which is always known when placing trades.
+
         Returns:
             Array containing the percentage.
          """
-        right_shifted_c = np.empty_like(self.c)
-        right_shifted_c[0] = np.nan
-        right_shifted_c[1:] = self.c[:-1]
-        gap_percent = 100 * (self.o - right_shifted_c) / right_shifted_c
+        left_shifted_o = np.empty_like(self.o)
+        left_shifted_o[:-1] = self.o[1:]
+        left_shifted_o[-1] = np.nan
+        gap_percent = 100 * (left_shifted_o - self.c) / self.c
         gap_percent[self.missing] = np.nan
         return gap_percent.astype(np.float32)
 
