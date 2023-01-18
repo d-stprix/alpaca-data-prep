@@ -543,33 +543,6 @@ def indicator_process(input: List) -> List[Union[str, Dict[str, Union[np.ndarray
             'Previous Day': np.array([False] * num_candles, dtype=np.bool)
         }]
 
-    def time_function(n, func, arg=None):
-        """For testing the execution time of each function.
-
-        Performs 10 trials of each test. Prints time for each trial, average trial time and
-        standard deviation.
-
-        Args:
-            n: Number of iterations.
-            Func: Name of function.
-            arg: Argument for function (applies only for calc_EMA)
-        """
-        run_times = []
-        for run in range(10):
-            start = time.perf_counter()
-            if arg is not None:
-                for i in range(n):
-                    func(arg)
-                end = time.perf_counter()
-            else:
-                for i in range(n):
-                    func()
-                end = time.perf_counter()
-            run_times.append(end - start)
-            print('{} = {}s for {} runs'.format(func.__name__, end - start, n))
-        print(np.mean(run_times))
-        print(np.std(run_times))
-
     symbol = input[0]
     num_candles = input[1]['close'].size
     if num_candles < 40:  # Basically no data for this symbol
@@ -617,7 +590,7 @@ def calculate_indicators(data_dict: Dict[str, Dict[str, Union[List[str], np.ndar
         """
         times = {time for symbol in data_dict.keys() for time in (
             data_dict[symbol]['integer day'])}
-        return np.asarray(sorted(list(times)))
+        return np.array(sorted(list(times)))
 
     def append_indicators(data_dict: Dict[str, Dict[str, Union[List[str], np.ndarray]]],
                           indicator_data: List[
@@ -637,11 +610,11 @@ def calculate_indicators(data_dict: Dict[str, Dict[str, Union[List[str], np.ndar
                 data_dict[symbol].update(entry[1])
 
     active_times = get_candle_times(data_dict)
-    active_times = [active_times, active_times]
+    active_times = [active_times] * len(data_dict)
     start = time.perf_counter()
-    p = multiprocessing.Pool()
-    indicator_data = p.map(indicator_process,
-                           zip(data_dict.keys(), data_dict.values(), active_times))
+    with multiprocessing.Pool() as p:
+        indicator_data = p.map(indicator_process,
+                               zip(data_dict.keys(), data_dict.values(), active_times))
     end = time.perf_counter()
     print('Took {}s to calculate indicators for all symbols'.format(end - start))
     append_indicators(data_dict, indicator_data)
@@ -777,6 +750,7 @@ def save_month(data_dict: Dict[str, Dict[str, Union[List[str], np.ndarray]]]):
     index_filename = 'daily_indices.feather'
     data_filepath = FILEPATH + '\\' + main_filename
     index_filepath = FILEPATH + '\\' + index_filename
+    print('Saving to file...')
     data_df.to_feather(data_filepath)
     index_df.to_feather(index_filepath)
 
