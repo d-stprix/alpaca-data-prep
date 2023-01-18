@@ -1,11 +1,13 @@
 # Lightning-Fast Indicators
 
-## Accesses candles through the Alpaca Market Data API and calculates technical indicators.
+## Accesses Candles Through the Alpaca Market Data API and Calculates Technical Indicators.
 
 You can retrieve years of historical data for over 6000 symbols with one click of a button without fear of overwhelming your RAM. These modules were written to create neatly formatted data files to use when backtesting day trading strategies. 
-- dataprocessor.py: Imports data and calculates indicators before saving to two .Feather files. 
-- One file contains data for all symbols for one month. The other file contains the start and end indices of each symbol in the first file.
-- Each month has a separate set of .Feather files. 
+- dataprocessor.py: Imports intraday data and calculates indicators before saving to two .Feather files. 
+  - One file contains data for all symbols for one month (each month has a separate file). The other file contains the start and end indices of each symbol in the first file.
+- dailyprocessor.py: Imports daily data and calculates indicators before saving to two .Feather files. 
+  - One file contains data for entire time period. The other file contains the start and end indices of each symbol in the first file.
+
 - candlesticks.py: Produces candlestick plots including functionality for adding technical indicators.
 
 **Be sure to check out the Wiki for implementation and performance details!**
@@ -19,7 +21,7 @@ You can retrieve years of historical data for over 6000 symbols with one click o
 3) Make an account with Alpaca (go to Alpaca.markets).
 4) Import intraday data using dataprocessor.py and daily data with dailyprocessor.py.
 
-**Data retrieval and indicator calculation:**
+**Data Retrieval and Indicator Calculation:**
 
 1) Specify user parameters in dataprocessor.py / dailyprocessor.py:
     - API key: *line 28* / *line 30*
@@ -32,7 +34,7 @@ You can retrieve years of historical data for over 6000 symbols with one click o
     - symbols: *line 1286* / *line 791* - ['AAPL', 'SPY'] (set to import 1602 symbols found in CSV file by default).
 3) Click run.
 
-**Accessing data in your script:**
+**Accessing Data in Your Script:**
 
 1) Read the two .Feather files using:
 
@@ -60,7 +62,7 @@ open_price = aapl_dict['open']
 ema_20 = aapl_dict['20 EMA']
 ...
 ```
-**Market data with associated dictionary key:**
+**Market Data with Associated Dictionary Key:**
 
 |Name| Dictionary Key|
 |---|---|
@@ -75,7 +77,7 @@ ema_20 = aapl_dict['20 EMA']
 \* Timestamp represented as a datetime.datetime object. \
 \** Integer representation of timestamp. Intraday set's key follows one for daily set. No hour and minute values for daily bars. (YYYYMMddHHmm without hyphens or colons)
 
-**Intraday indicators calculated with associated dictionary key:**
+**Intraday Indicators with Associated Dictionary Key:**
 
 <table>
 <tr><th> Continuous Indicators </th><th> Candlestick Patterns </th></tr>
@@ -117,7 +119,7 @@ ema_20 = aapl_dict['20 EMA']
 
 \* Number of consecutive candles of the same color (positive and negative values for bullish and bearish candles respectively) 
 
-**Daily indicators calculated with associated dictionary key:**
+**Daily Indicators with Associated Dictionary Key:**
 
 |Indicator| Dictionary Key|
 |---|---|
@@ -132,7 +134,7 @@ ema_20 = aapl_dict['20 EMA']
 \** TRUE if previous day is bullish (closes above open), FALSE if previous day is bearish or a doji. \
 \*** A list of values that correspond to support and resistance levels. 'SR indices' refers to the index (in the past) during which the price reached such level.
 
-**Plotting candlestick charts with candlesticks.py:**
+**Plotting Candlestick Charts with candlesticks.py:**
 
 Plots one day of data. Candlesticks containing prices and volume bars are automatically plotted.
 
@@ -163,6 +165,9 @@ Plots one day of data. Candlesticks containing prices and volume bars are automa
 
 **Plot Showing the VWAP and Bollinger Bands (5 min timeframe)**
 ![opener](img/VWAP%20Bollinger%20RSI.JPG)
+
+**Plot Showing Support/Resistance Lines (Daily)**
+![opener](img/SRexampleplain.JPG)
 
 **Tweezer Bottom Strategy Backtest Example (5 min timeframe)**
 
