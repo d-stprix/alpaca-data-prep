@@ -106,7 +106,7 @@ def import_data(month: Tuple[str, str], timeframe: str, symbols: List[str],
                         else:
                             r = s.get(bars_url, params=params, headers=HEADERS, timeout=(3.05, 20))
                         raw_data = json.loads(r.content)
-                    except Timeout:
+                    except: # requests.exceptions.Timeout:
                         print('{} - Connection failed.. trying again'.format(
                             dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
                         time.sleep(0.5)
@@ -325,7 +325,6 @@ class IndicatorCalculator:
             missing_five: An array of booleans indicating whether this bar follows 5 missing
             bars in a row.
             missing: An array of booleans indicating whether this bar follows a missing bar.
-            num_bits: Size of floats in output.
 
         Returns:
             An array containing the EMA.
@@ -572,9 +571,9 @@ class IndicatorCalculator:
             return self.njit_bollinger_extended(extended_close, sma_20)
 
     @staticmethod
-    @njit(cache=True, fastmath=True)
-    def njit_bollinger(c, sma_20):
-        """ Calculate the Bollinger Bands when data from the previous months is not included.
+    @njit(cache=True)
+    def njit_bollinger(c: np.ndarray, sma_20: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """ Calculate the Bollinger Bands when data from the previous month is not included.
 
         Args:
             sma_20: The 20 SMA.
@@ -598,9 +597,9 @@ class IndicatorCalculator:
         return BB_plus.astype(np.float32), BB_minus.astype(np.float32)
 
     @staticmethod
-    # @njit(cache=True, fastmath=True)
-    def njit_bollinger_extended(c, sma_20):
-        """ Calculate the Bollinger Bands when data from the previous months is not included.
+    @njit(cache=True)
+    def njit_bollinger_extended(c: np.ndarray, sma_20: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """ Calculate the Bollinger Bands when data from the previous month is included.
 
         Args:
             sma_20: The 20 SMA.
@@ -678,6 +677,142 @@ class IndicatorCalculator:
         all_consecutives[open_indices] = open_consecutives
         return all_consecutives
 
+    def calc_ichimoku(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Calculate the indicators associated with the Ichimoku Cloud strategy.
+
+        Uses njit_ichimoku for better performance. Uses the previous month's values of high, low,
+        Senkou Span A, Senkou Span B to allow continuity between months.
+
+        Returns:
+            Four arrays containing the Tenkan, Kijun, Senkou Span A, and Senkou Span B lines.
+        """
+
+        prev_senkou_a = self.prev_month_indicators['Senkou Span A']
+        prev_senkou_b = self.prev_month_indicators['Senkou Span B']
+        prev_h = self.prev_month_indicators['high']
+        prev_l = self.prev_month_indicators['low']
+        if not len(prev_senkou_a) or np.isnan(prev_senkou_a).all() or len(prev_h) < 52:
+            return self.njit_ichimoku(self.h, self.l, self.missing_five, self.missing)
+        else:
+            h = np.append(prev_h, self.h)
+            l = np.append(prev_l, self.l)
+            return self.njit_ichimoku_extended(h, l, prev_senkou_a, prev_senkou_b,
+                                               self.missing_five, self.missing)
+
+    @staticmethod
+    @njit(cache=True)
+    def njit_ichimoku(h: np.ndarray, l: np.ndarray, missing_five: np.ndarray,
+                      missing: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """ Calculate the Ichimoku Cloud indicators when data from the previous month is not included.
+
+        Args:
+            h: Bar high prices.
+            l: Bar low prices.
+            missing_five: An array of booleans indicating whether this bar follows 5 missing
+            bars in a row.
+            missing: An array of booleans indicating whether this bar follows a missing bar.
+
+        Returns:
+            Four arrays containing the Tenkan, Kijun, Senkou Span A, and Senkou Span B lines.
+        """
+        tenkan = np.empty_like(h)
+        kijun = np.empty_like(h)
+        senkou_a = np.empty(len(h) + 26)
+        senkou_b = np.empty(len(h) + 26)
+
+        tenkan.fill(np.nan)
+        kijun.fill(np.nan)
+        senkou_a.fill(np.nan)
+        senkou_b.fill(np.nan)
+
+        nan_indices9 = njit_calc_nan(9, missing_five, missing, h.size)
+        nan_indices26 = njit_calc_nan(26, missing_five, missing, h.size)
+        nan_indices52 = njit_calc_nan(52, missing_five, missing, h.size)
+
+        short_max = med_max = long_max = h[0]
+        short_min = med_min = long_min = l[0]
+        for i in range(len(h)):
+            if i >= 9 and i not in nan_indices9:
+                short_max = max(h[i-8:i+1]) if h[i-9] == short_max else max(short_max, h[i])
+                short_min = min(l[i-8:i+1]) if l[i-9] == short_min else min(short_min, l[i])
+                tenkan[i] = (short_max + short_min)/2
+            if i >= 26 and i not in nan_indices26:
+                med_max = max(h[i-25:i+1]) if h[i-26] == med_max else max(med_max, h[i])
+                med_min = min(l[i-25:i+1]) if l[i-26] == med_min else min(med_min, l[i])
+                kijun[i] = (med_max + med_min)/2
+                senkou_a[i+26] = (tenkan[i] + kijun[i]) / 2
+            if i >= 52 and i not in nan_indices52:
+                long_max = max(h[i-51:i+1]) if h[i-52] == long_max else max(long_max, h[i])
+                long_min = min(l[i-51:i+1]) if l[i-52] == long_min else min(long_min, l[i])
+                senkou_b[i+26] = (long_max + long_min) / 2
+
+        return tenkan.astype(np.float32), kijun.astype(np.float32), senkou_a.astype(np.float32), \
+               senkou_b.astype(np.float32)
+
+    @staticmethod
+    @njit(cache=True)
+    def njit_ichimoku_extended(h: np.ndarray, l: np.ndarray, prev_senkou_a: np.ndarray,
+                               prev_senkou_b: np.ndarray, missing_five: np.ndarray,
+                               missing: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray,
+                                                             np.ndarray]:
+        """ Calculate the Ichimoku Cloud indicators when data from the previous month is included.
+
+        Args:
+            h: Bar high prices.
+            l: Bar low prices.
+            prev_senkou_a: The last 26 values of Senkou Span A calculated the previous month.
+            prev_senkou_b: The last 26 values of Senkou Span B calculated the previous month.
+            missing_five: An array of booleans indicating whether this bar follows 5 missing
+            bars in a row.
+            missing: An array of booleans indicating whether this bar follows a missing bar.
+
+        Returns:
+            Four arrays containing the Tenkan, Kijun, Senkou Span A, and Senkou Span B lines.
+        """
+        offset = 52
+        tenkan = np.empty(len(h) - offset)
+        kijun = np.empty(len(h) - offset)
+        senkou_a = np.empty(len(h) - offset + 26)
+        senkou_b = np.empty(len(h) - offset + 26)
+
+        tenkan.fill(np.nan)
+        kijun.fill(np.nan)
+        senkou_a.fill(np.nan)
+        senkou_b.fill(np.nan)
+        senkou_a[:26] = prev_senkou_a
+        senkou_b[:26] = prev_senkou_b
+
+        nan_indices9 = njit_calc_nan(9, missing_five, missing, tenkan.size)
+        nan_indices26 = njit_calc_nan(26, missing_five, missing, tenkan.size)
+        nan_indices52 = njit_calc_nan(52, missing_five, missing, tenkan.size)
+
+        short_max = h[offset - 9]
+        short_min = l[offset - 9]
+        med_max = h[offset - 26]
+        med_min = l[offset - 26]
+        long_max = h[offset - 52]
+        long_min = l[offset - 52]
+
+        for i in range(len(tenkan)):
+            i2 = i + offset
+            if i not in nan_indices9:
+                short_max = max(h[i2-8:i2+1]) if h[i2-9] == short_max else max(short_max, h[i2])
+                short_min = min(l[i2-8:i2+1]) if l[i2-9] == short_min else min(short_min, l[i2])
+                tenkan[i] = (short_max + short_min)/2
+
+            if i not in nan_indices26:
+                med_max = max(h[i2-25:i2+1]) if h[i2-26] == med_max else max(med_max, h[i2])
+                med_min = min(l[i2-25:i2+1]) if l[i2-26] == med_min else min(med_min, l[i2])
+                kijun[i] = (med_max + med_min)/2
+                senkou_a[i+26] = (tenkan[i] + kijun[i]) / 2
+
+            if i not in nan_indices52:
+                long_max = max(h[i2-51:i2+1]) if h[i2-52] == long_max else max(long_max, h[i2])
+                long_min = min(l[i2-51:i2+1]) if l[i2-52] == long_min else min(long_min, l[i2])
+                senkou_b[i+26] = (long_max + long_min) / 2
+        return tenkan.astype(np.float32), kijun.astype(np.float32), senkou_a.astype(np.float32), \
+               senkou_b.astype(np.float32)
+
     def candlestick_analysis(self) -> Dict[str, np.ndarray]:
         """Determines whether certain candlestick patterns are found at each index.
 
@@ -686,7 +821,6 @@ class IndicatorCalculator:
         Returns:
             Dictionary with each key being a candlestick pattern and the values as boolean arrays.
         """
-        # candlestick_data = self.njit_candlestick(self.o, self.c, self.h, self.l)
         c = self.c.astype(np.float32)  # Works on 32-bit floats, faster than 64-bit ones
         o = self.o.astype(np.float32)
         h = self.h.astype(np.float32)
@@ -829,6 +963,12 @@ def indicator_process(input: List) -> List[Union[str, Dict[str, Union[np.ndarray
             'Bollinger (Lower)': np.copy(empty_32bit_array),
             'Last Close': np.nan,
             'Consecutives': np.array([0] * num_candles, dtype=np.uint16),
+            'Tenkan': np.copy(empty_32bit_array),
+            'Kijun': np.copy(empty_32bit_array),
+            'Senkou Span A': np.array([np.nan] * (num_candles + 26), dtype=np.float32),
+            'Senkou Span B': np.array([np.nan] * (num_candles + 26), dtype=np.float32),
+            'high': np.array([]),
+            'low': np.array([]),
             **get_false_candlestick_arrays(num_candles)
         }]
 
@@ -844,6 +984,11 @@ def indicator_process(input: List) -> List[Union[str, Dict[str, Union[np.ndarray
             arg: Argument for function (applies only for calc_EMA)
         """
         run_times = []
+        if arg is not None:  # Run once initially to compile.
+            func(arg)
+        else:
+            func()
+
         for run in range(10):
             start = time.perf_counter()
             if arg is not None:
@@ -859,12 +1004,14 @@ def indicator_process(input: List) -> List[Union[str, Dict[str, Union[np.ndarray
         print(np.mean(run_times))
         print(np.std(run_times))
 
+
     symbol = input[0]
     num_candles = input[1]['close'].size
     if num_candles < 40:  # No data for this symbol
         return empty_data_dict(symbol, num_candles,
                                (input[1]['integer date'], input[1]['hour'], input[1]['min']))
     indicator_calculator = IndicatorCalculator(input)
+    tenkan, kijun, senkou_a, senkou_b = indicator_calculator.calc_ichimoku()
     ema_9 = indicator_calculator.calc_ema(9)
     ema_20 = indicator_calculator.calc_ema(20)
     ema_50 = indicator_calculator.calc_ema(50)
@@ -878,6 +1025,7 @@ def indicator_process(input: List) -> List[Union[str, Dict[str, Union[np.ndarray
     candlestick_data = indicator_calculator.candlestick_analysis()
     c = input[1]['close']  # Used to calculate indicators for next month.
     h = input[1]['high']
+    l = input[1]['low']
 
     # Code to test execution times:
     # time_function(10000, indicator_calculator.calc_rsi)
@@ -911,6 +1059,12 @@ def indicator_process(input: List) -> List[Union[str, Dict[str, Union[np.ndarray
         'Bollinger (Upper)': bb_plus,
         'Bollinger (Lower)': bb_minus,
         'Consecutives': consecutives,
+        'Tenkan': tenkan,
+        'Kijun': kijun,
+        'Senkou Span A': senkou_a,
+        'Senkou Span B': senkou_b,
+        'high': h[-52:],  # To be able to calculate Ichimoku indicators.
+        'low': l[-52:],
         **candlestick_data
     }]
 
@@ -998,7 +1152,7 @@ def calculate_indicators(month_data: Dict[str, Dict[str, Union[List[str], np.nda
             indicator_data: List[Union[str, Dict[str, Union[np.ndarray, np.float32]]]]):
         """Updates prev_month_indicators using newly calculated indicator data.
 
-        If the 9 EMA is an empty list, then set all indicators to NaN or a list of NaN's.
+        If the 200 EMA is an empty list, then set all indicators to NaN or a list of NaN's.
 
         Args:
             prev_month_indicators: Contains some indicators from previous month.
@@ -1009,9 +1163,13 @@ def calculate_indicators(month_data: Dict[str, Dict[str, Union[List[str], np.nda
         for entry in indicator_data:
             symbol = entry[0]
             values = entry[1]
-            if not values['9 EMA'].size:  # If indicators were not calculated
+            if not values['200 EMA'].size:  # If indicators were not calculated
                 prev_month_indicators.update({
                     symbol: {
+                        'high': np.array([]),
+                        'low': np.array([]),
+                        'Senkou Span A': np.array([]),
+                        'Senkou Span B': np.array([]),
                         '14 SMA': np.array([]),
                         '20 SMA': np.array([]),
                         '9 EMA': np.nan,
@@ -1030,6 +1188,10 @@ def calculate_indicators(month_data: Dict[str, Dict[str, Union[List[str], np.nda
             else:
                 prev_month_indicators.update({
                     symbol: {
+                        'high': values['high'][-52:],
+                        'low': values['low'][-52:],
+                        'Senkou Span A': values['Senkou Span A'][-26:],
+                        'Senkou Span B': values['Senkou Span B'][-26:],
                         '14 SMA': values['14 SMA'],
                         '20 SMA': values['20 SMA'],
                         '9 EMA': values['9 EMA'][-1],
@@ -1051,6 +1213,8 @@ def calculate_indicators(month_data: Dict[str, Dict[str, Union[List[str], np.nda
             del values['12 EMA']
             del values['26 EMA']
             del values['Last Close']
+            del values['high']
+            del values['low']
 
     def append_indicators(month_data: Dict[str, Dict[str, Union[List[str], np.ndarray]]],
                           indicator_data: List[
@@ -1156,8 +1320,11 @@ def save_month(month_data: Dict[str, Dict[str, Union[List[str], np.ndarray]]], m
             symbol_indices[0].append(start)
             symbol_indices[1].append(end)
             for header, arr in symbol_data.items():
-                if header not in ['hour', 'min', 'integer date']:
-                    complete_data[header][start:end] = arr
+                if header in ['Senkou Span A', 'Senkou Span B']:
+                    complete_data[header][start:end] = arr[:-26]  # Last 26 values are part of the
+                    # next month's dataset.
+                elif header not in ['hour', 'min', 'integer date']:
+                        complete_data[header][start:end] = arr
         return complete_data, symbol_indices
 
     def convert_to_32_bits(complete_data):
@@ -1208,7 +1375,8 @@ def save_month(month_data: Dict[str, Dict[str, Union[List[str], np.ndarray]]], m
     convert_time_list_to_array(month_data.values())
     df_headers = [header for header in month_data[symbols[0]].keys() if
                   header not in ['hour', 'min', 'integer date']]
-    dtypes = [arr.dtype for arr in month_data[symbols[0]].values()]
+    dtypes = [arr.dtype for header, arr in month_data[symbols[0]].items() if header not in
+              ['hour', 'min', 'integer date']]
     complete_data, symbol_indices = combine_data(df_headers, dtypes, month_data.values())
     convert_to_32_bits(complete_data)
     index_df = create_index_df(symbol_indices)
@@ -1247,6 +1415,10 @@ def init_prev_month_indicators(symbols: List[str]) -> Dict[
     """
     return {
         symbol: {
+            'high': np.array([]),
+            'low': np.array([]),
+            'Senkou Span A': np.array([]),
+            'Senkou Span B': np.array([]),
             '14 SMA': np.array([]),
             '20 SMA': np.array([]),
             '9 EMA': np.nan,
@@ -1279,9 +1451,9 @@ def est_tuple_to_utc(date: Tuple[int, int, int]) -> Type[dt.datetime]:
 
 def main():
     # Enter start and end dates, timeframe for each candlestick, and a list of symbols
-    start_date = (2020, 1, 1)
+    start_date = (2018, 1, 1)
     end_date = (2022, 12, 31)
-    timeframe = '1min'  # Should not exceed 10min
+    timeframe = '5min'  # Should not exceed 10min
     #  Manually select symbols with a list, e.g. ['AAPL', 'SPY', 'MSFT', 'TSLA']
     symbols = import_stock_csv()
 
