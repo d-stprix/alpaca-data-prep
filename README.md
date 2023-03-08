@@ -120,7 +120,7 @@ ema_20 = aapl_dict['20 EMA']
 
 </td></tr> </table>
 
-\* Number of consecutive candles of the same color (positive and negative values for bullish and bearish candles respectively) 
+\* Number of consecutive candles of the same color (positive and negative values for bullish and bearish candles respectively). \
 \** Part of the Ichimoku Cloud Indicator.
 
 **Daily Indicators with Associated Dictionary Key:**
