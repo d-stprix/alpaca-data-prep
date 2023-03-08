@@ -28,10 +28,10 @@ You can retrieve years of historical data for over 6000 symbols with one click o
     - Secret key: *line 29* / *line 31*
     - Place to save files: *line 30* / *line 32*
 2) Specify data parameters in dataprocessor.py / dailyprocessor.py:
-    - start_date: *line 1282* / *line 788* (YYYY, MM, dd) 
-    - end_date: *line 1283* / *line 789*
-    - timeframe: *line 1284*, e.g. '5min' (only applicable for dataprocessor.py).
-    - symbols: *line 1286* / *line 791* - ['AAPL', 'SPY'] (set to import 1602 symbols found in CSV file by default).
+    - start_date: *line 1454* / *line 788* (YYYY, MM, dd) 
+    - end_date: *line 1455* / *line 789*
+    - timeframe: *line 1456*, e.g. '5min' (only applicable for dataprocessor.py).
+    - symbols: *line 1458* / *line 791* - ['AAPL', 'SPY'] (set to import 1602 symbols found in CSV file by default).
 3) Click run.
 
 **Accessing Data in Your Script:**
@@ -97,7 +97,10 @@ ema_20 = aapl_dict['20 EMA']
 |Bollinger Band (upper)| 'Bollinger (Upper)'|
 |Bollinger Band (lower)| 'Bollinger (Lower)'|
 |Consecutives*| 'Consecutives'|
-
+|Tenkan (Conversion) Line**| 'Tenkan'|
+|Kijun (Base) Line**| 'Kijun'|
+|Senkou (Leading) Span A**| 'Senkou Span A'|
+|Senkou (Leading) Span B**| 'Senkou Span B'|
 
 </td><td>
 
@@ -118,6 +121,7 @@ ema_20 = aapl_dict['20 EMA']
 </td></tr> </table>
 
 \* Number of consecutive candles of the same color (positive and negative values for bullish and bearish candles respectively) 
+\** Part of the Ichimoku Cloud Indicator.
 
 **Daily Indicators with Associated Dictionary Key:**
 
